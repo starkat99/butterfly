@@ -8,6 +8,9 @@ CI_CARGO_TEST_FLAGS = { value = "--locked -- --nocapture", condition = { env_tru
 CARGO_MAKE_CLIPPY_ARGS = { value = "${CARGO_MAKE_CLIPPY_ALL_FEATURES_WARN}", condition = { env_true = [
     "CI",
 ] } }
+CARGO_MAKE_TRUNK_VERBOSE_FLAGS = { value = "-v", condition = { env_true = [
+    "CARGO_MAKE_CI",
+]} }
 
 # Override for CI flag additions
 [tasks.test]
@@ -41,6 +44,129 @@ args = [
     "${CARGO_MAKE_CARGO_ALL_FEATURES}",
 ]
 
-# Add doc lints to CI flow
+# Add additional items to CI flow
+[tasks.extended-ci-flow]
+category = "CI"
+dependencies = [
+    "check-docs",
+    "pre-trunk-build",
+    "trunk-build",
+    "post-trunk-build",
+]
+
 [tasks.post-ci-flow]
-run_task = "check-docs"
+run_task = "extended-ci-flow"
+
+[tasks.install-trunk]
+description = "Installs trunk crate."
+category = "wasm"
+install_crate = { crate_name = "trunk", binary = "trunk", test_arg = "-V" }
+
+[tasks.trunk-base]
+category = "wasm"
+dependencies = ["install-trunk"]
+command = "trunk"
+
+[tasks.pre-trunk-build]
+category = "Build"
+
+[tasks.trunk-build]
+description = "Run trunk build command."
+extend = "trunk-base"
+args = [
+    "@@remove-empty(CARGO_MAKE_TRUNK_VERBOSE_FLAGS)",
+    "build",
+    "@@split(CARGO_MAKE_TRUNK_BUILD_ARGS, )",
+    "@@split(CI_TRUNK_BUILD_FLAGS)",
+]
+
+[tasks.trunk-build-release]
+description = "Run trunk build command in release mode."
+extend = "trunk-base"
+args = [
+    "@@remove-empty(CARGO_MAKE_TRUNK_VERBOSE_FLAGS)",
+    "build",
+    "--release",
+    "@@split(CARGO_MAKE_TRUNK_BUILD_ARGS, )",
+]
+
+[tasks.post-trunk-build]
+category = "Build"
+
+[tasks.pre-trunk-serve]
+category = "wasm"
+
+[tasks.trunk-serve]
+description = "Run trunk serve command."
+extend = "trunk-base"
+args = [
+    "@@remove-empty(CARGO_MAKE_TRUNK_VERBOSE_FLAGS)",
+    "serve",
+    "@@split(CARGO_MAKE_TRUNK_SERVE_ARGS, )",
+]
+
+[tasks.trunk-serve-release]
+description = "Run trunk serve command."
+extend = "trunk-base"
+args = [
+    "@@remove-empty(CARGO_MAKE_TRUNK_VERBOSE_FLAGS)",
+    "serve",
+    "--release",
+    "@@split(CARGO_MAKE_TRUNK_SERVE_ARGS, )",
+]
+
+[tasks.pre-trunk-clean]
+category = "Cleanup"
+
+[tasks.trunk-clean]
+description = "Run trunk clean command."
+extend = "trunk-base"
+args = [
+    "@@remove-empty(CARGO_MAKE_TRUNK_VERBOSE_FLAGS)",
+    "clean",
+]
+
+[tasks.post-trunk-clean]
+category = "Cleanup"
+
+[tasks.dev-serve-flow]
+description = "Development testing flow will run trunk serve."
+category = "Development"
+dependencies = [
+    "format-flow",
+    "format-toml-conditioned-flow",
+    "pre-build",
+    "pre-trunk-serve",
+    "trunk-serve",
+]
+
+[tasks.default]
+alias = "dev-serve-flow"
+
+[tasks.rebuild-flow]
+description = "Clean, rebuild, and validate."
+category = "Build"
+dependencies = [
+  "init-build-flow",
+  "pre-clean",
+  "clean-apidocs",
+  "clean",
+  "pre-trunk-clean",
+  "trunk-clean",
+  "post-trunk-clean",
+  "post-clean",
+  "format-flow",
+  "pre-build",
+  "pre-trunk-build",
+  "trunk-build",
+  "post-trunk-build",
+  "post-build",
+  "pre-verify-project",
+  "verify-project",
+  "post-verify-project",
+  "pre-audit",
+  "audit",
+  "post-audit",
+  "outdated-flow",
+  "end-build-flow",
+]

@@ -31,7 +31,7 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v3
-      
+
     - name: Install Rust toolchain
       uses: actions-rs/toolchain@v1
       with:
@@ -39,13 +39,14 @@ jobs:
         toolchain: ${{ matrix.rust }}
         override: true
         components: clippy,rustfmt
-        
+        target: wasm32-unknown-unknown
+
     - name: Cache Dependencies
       uses: Swatinem/rust-cache@v2
-      
+
     - name: Install Cargo Make
       uses: davidB/rust-cargo-make@v1
-        
+
     - name: cargo-make ci-flow
       uses: actions-rs/cargo@v1
       with:
