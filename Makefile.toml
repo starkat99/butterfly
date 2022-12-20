@@ -77,7 +77,7 @@ args = [
     "@@remove-empty(CARGO_MAKE_TRUNK_VERBOSE_FLAGS)",
     "build",
     "@@split(CARGO_MAKE_TRUNK_BUILD_ARGS, )",
-    "@@split(CI_TRUNK_BUILD_FLAGS)",
+    "@@split(CI_TRUNK_BUILD_FLAGS, )",
 ]
 
 [tasks.trunk-build-release]
